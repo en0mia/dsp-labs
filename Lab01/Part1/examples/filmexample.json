@@ -1,0 +1,10 @@
+{
+  "$schema": "../filmschema.json",
+  "id": 1,
+  "title": "A beautiful film",
+  "owner": 1,
+  "private": true,
+  "watchDate": "2024-07-05",
+  "rating": 5,
+  "favorite": true
+}
