@@ -1,0 +1,486 @@
+openapi: 3.0.1
+info:
+  title: Film Manager APIs
+  description: An API to manage a film library
+  version: "1.0"
+servers:
+- url: /
+paths:
+  /users:
+    get:
+      tags:
+      - users
+      description: Get information about the current user
+      operationId: usersGET
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/user'
+        "401":
+          description: Unauthorized
+      security:
+      - cookieAuth: []
+      x-swagger-router-controller: Users
+    post:
+      tags:
+      - users
+      description: Login
+      operationId: usersPOST
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/credentials'
+      responses:
+        "204":
+          description: No Content
+          headers:
+            Set-Cookie:
+              style: simple
+              explode: false
+              schema:
+                type: string
+      x-swagger-router-controller: Users
+  /films:
+    get:
+      tags:
+      - films
+      description: Get the list of public films or private films owned by self
+      operationId: filmsGET
+      parameters:
+      - name: page
+        in: query
+        description: Page to retrieve
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: numberOfElements
+        in: query
+        description: Number of elements per page
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/films'
+      x-swagger-router-controller: Films
+    post:
+      tags:
+      - films
+      description: Create a new film
+      operationId: filmsPOST
+      requestBody:
+        description: Film details
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/film'
+        required: true
+      responses:
+        "201":
+          description: Created
+        "401":
+          description: Unauthorized
+      security:
+      - cookieAuth: []
+      x-swagger-router-controller: Films
+  /films/{filmId}:
+    get:
+      tags:
+      - films
+      description: Get a single public film or private film owned by self
+      operationId: filmsFilmIdGET
+      parameters:
+      - name: filmId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/film'
+        "404":
+          description: Not found
+      x-swagger-router-controller: Films
+    put:
+      tags:
+      - films
+      description: Update a film
+      operationId: filmsFilmIdPUT
+      parameters:
+      - name: filmId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      requestBody:
+        description: Film details
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/film'
+        required: true
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+      security:
+      - cookieAuth: []
+      x-swagger-router-controller: Films
+    delete:
+      tags:
+      - films
+      description: Delete a film
+      operationId: filmsFilmIdDELETE
+      parameters:
+      - name: filmId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+      security:
+      - cookieAuth: []
+      x-swagger-router-controller: Films
+  /films/{filmId}/reviews:
+    get:
+      tags:
+      - reviews
+      description: Get the reviews of a public film or private film owned by self
+      operationId: filmsFilmIdReviewsGET
+      parameters:
+      - name: filmId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/reviews'
+        "404":
+          description: Not found
+      x-swagger-router-controller: Reviews
+    post:
+      tags:
+      - reviews
+      description: Issue a new invitation to review a film
+      operationId: filmsFilmIdReviewsPOST
+      parameters:
+      - name: filmId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "201":
+          description: Created
+        "401":
+          description: Unauthorized
+      security:
+      - cookieAuth: []
+      x-swagger-router-controller: Reviews
+  /reviews:
+    get:
+      tags:
+      - reviews
+      description: Get the reviews for the logged in user
+      operationId: reviewsGET
+      parameters:
+      - name: page
+        in: query
+        description: Page to retrieve
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: numberOfElements
+        in: query
+        description: Number of elements per page
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/reviews'
+        "401":
+          description: Unauthorized
+      security:
+      - cookieAuth: []
+      x-swagger-router-controller: Reviews
+  /reviews/assignment:
+    post:
+      tags:
+      - reviews
+      description: "Issue invitation for all the unreviewed films owned by self, in\
+        \ a balanced manner"
+      operationId: reviewsAssignmentPOST
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/inline_response_200'
+                x-content-type: application/json
+        "401":
+          description: Unauthorized
+      security:
+      - cookieAuth: []
+      x-swagger-router-controller: Reviews
+  /reviews/{reviewId}:
+    get:
+      tags:
+      - reviews
+      description: Get the review of a public film or private film owned by self
+      operationId: reviewsReviewIdGET
+      parameters:
+      - name: reviewId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/review'
+        "404":
+          description: Not found
+      x-swagger-router-controller: Reviews
+    put:
+      tags:
+      - reviews
+      description: Update a review
+      operationId: reviewsReviewIdPUT
+      parameters:
+      - name: reviewId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      requestBody:
+        description: Review details
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/review'
+        required: true
+      responses:
+        "204":
+          description: No content
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      security:
+      - cookieAuth: []
+      x-swagger-router-controller: Reviews
+    delete:
+      tags:
+      - reviews
+      description: Remove a review invitation
+      operationId: reviewsReviewIdDELETE
+      parameters:
+      - name: reviewId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "204":
+          description: No content
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+      security:
+      - cookieAuth: []
+      x-swagger-router-controller: Reviews
+components:
+  schemas:
+    email:
+      pattern: email
+      type: string
+    password:
+      maxLength: 20
+      minLength: 6
+      type: string
+    user:
+      required:
+      - email
+      - id
+      - name
+      - password
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          $ref: '#/components/schemas/email'
+        password:
+          $ref: '#/components/schemas/password'
+      additionalProperties: false
+      example:
+        password: password
+        name: name
+        id: 0
+        email: email
+    film:
+      required:
+      - id
+      - owner
+      - private
+      - title
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        owner:
+          type: integer
+        private:
+          type: boolean
+        watchDate:
+          type: string
+          format: date
+        rating:
+          maximum: 10
+          minimum: 0
+          type: integer
+        favorite:
+          type: boolean
+          default: false
+      additionalProperties: false
+      example:
+        owner: 6
+        private: true
+        watchDate: 2000-01-23
+        rating: 1
+        id: 0
+        title: title
+        favorite: false
+    review:
+      type: object
+      properties:
+        filmId:
+          type: integer
+        reviewerId:
+          type: integer
+        completed:
+          type: boolean
+        reviewDate:
+          type: string
+          format: date
+        rating:
+          maximum: 10
+          minimum: 0
+          type: integer
+        review:
+          maxLength: 1000
+          type: string
+      example:
+        reviewerId: 6
+        reviewDate: 2000-01-23
+        review: review
+        filmId: 0
+        rating: 1
+        completed: true
+    films:
+      uniqueItems: true
+      type: array
+      items:
+        $ref: '#/components/schemas/film'
+    reviews:
+      uniqueItems: true
+      type: array
+      items:
+        $ref: '#/components/schemas/review'
+    credentials:
+      required:
+      - email
+      - password
+      type: object
+      properties:
+        email:
+          $ref: '#/components/schemas/email'
+        password:
+          $ref: '#/components/schemas/password'
+      additionalProperties: false
+    inline_response_200:
+      properties:
+        filmId:
+          type: integer
+        reviewerId:
+          type: integer
+      example:
+        reviewerId: 6
+        filmId: 0
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      name: SESSIONID
+      in: cookie
