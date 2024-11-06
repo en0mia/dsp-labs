@@ -1,0 +1,489 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Film Manager APIs",
+    "description": "An API to manage a film library",
+    "version": "1.0"
+  },
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "SESSIONID"
+      }
+    },
+    "schemas": {
+      "email": { "type": "string", "pattern": "email" },
+      "password": { "type": "string", "minLength": 6, "maxLength": 20 },
+      "user": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "email": { "$ref": "#/components/schemas/email" },
+          "password": { "$ref": "#/components/schemas/password" }
+        },
+        "required": ["id", "name", "email", "password"]
+      },
+      "film": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "owner": { "type": "integer" },
+          "private": { "type": "boolean" },
+          "watchDate": { "type": "string", "format": "date" },
+          "rating": { "type": "integer", "minimum": 0, "maximum": 10 },
+          "favorite": { "type": "boolean", "default": false }
+        },
+        "required": ["id", "title", "owner", "private"],
+        "additionalProperties": false
+      },
+      "review": {
+        "type": "object",
+        "properties": {
+          "filmId": { "type": "integer" },
+          "reviewerId": { "type": "integer" },
+          "completed": { "type": "boolean" },
+          "reviewDate": { "type": "string", "format": "date" },
+          "rating": { "type": "integer", "minimum": 0, "maximum": 10 },
+          "review": { "type": "string", "maxLength": 1000 }
+        }
+      },
+      "films": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/film"
+        },
+        "uniqueItems": true
+      },
+      "reviews": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/review"
+        },
+        "uniqueItems": true
+      },
+      "credentials": {
+        "type": "object",
+        "properties": {
+          "email": { "$ref": "#/components/schemas/email" },
+          "password": { "$ref": "#/components/schemas/password" }
+        },
+        "required": ["email", "password"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "paths": {
+    "/users": {
+      "post": {
+        "tags": ["users"],
+        "description": "Login",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/credentials" }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "headers": {
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "tags": ["users"],
+        "description": "Get information about the current user",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/user"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/films": {
+      "get": {
+        "tags": ["films"],
+        "description": "Get the list of public films or private films owned by self",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Page to retrieve"
+          },
+          {
+            "in": "query",
+            "name": "numberOfElements",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Number of elements per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/films"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "tags": ["films"],
+        "description": "Create a new film",
+        "requestBody": {
+          "description": "Film details",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/film"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/films/{filmId}": {
+      "parameters": [
+        {
+          "name": "filmId",
+          "schema": { "type": "integer" },
+          "in": "path",
+          "required": true
+        }
+      ],
+      "get": {
+        "tags": ["films"],
+        "description": "Get a single public film or private film owned by self",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/film"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "tags": ["films"],
+        "description": "Update a film",
+        "requestBody": {
+          "description": "Film details",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/film"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "tags": ["films"],
+        "description": "Delete a film",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/films/{filmId}/reviews": {
+      "parameters": [
+        {
+          "name": "filmId",
+          "schema": { "type": "integer" },
+          "in": "path",
+          "required": true
+        }
+      ],
+      "get": {
+        "tags": ["reviews"],
+        "description": "Get the reviews of a public film or private film owned by self",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/reviews"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "tags": ["reviews"],
+        "description": "Issue a new invitation to review a film",
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/reviews": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "tags": ["reviews"],
+        "description": "Get the reviews for the logged in user",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Page to retrieve"
+          },
+          {
+            "in": "query",
+            "name": "numberOfElements",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Number of elements per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/reviews"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/reviews/assignment": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "tags": ["reviews"],
+        "description": "Issue invitation for all the unreviewed films owned by self, in a balanced manner",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "properties": {
+                      "filmId": {
+                        "type": "integer"
+                      },
+                      "reviewerId": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/reviews/{reviewId}": {
+      "parameters": [
+        {
+          "name": "reviewId",
+          "schema": { "type": "integer" },
+          "in": "path",
+          "required": true
+        }
+      ],
+      "get": {
+        "tags": ["reviews"],
+        "description": "Get the review of a public film or private film owned by self",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/review"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "tags": ["reviews"],
+        "description": "Remove a review invitation",
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "tags": ["reviews"],
+        "description": "Update a review",
+        "requestBody": {
+          "description": "Review details",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/review"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    }
+  }
+}
